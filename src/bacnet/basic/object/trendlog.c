@@ -958,7 +958,7 @@ void TL_Local_Time_To_BAC(BACNET_DATE_TIME *DestTime, time_t SourceTime)
 {
     struct tm *TempTime;
 
-    TempTime = localtime(&SourceTime);
+    TempTime = localtime_r(&SourceTime);
 
     DestTime->date.year = (uint16_t)(TempTime->tm_year + 1900);
     DestTime->date.month = (uint8_t)(TempTime->tm_mon + 1);

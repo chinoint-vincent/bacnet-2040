@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     /* send the request */
     time(&rawtime);
 #if 1 // fixing thread safety
-    localtime(&rawtime, &my_time);
+    localtime_r(&rawtime, &my_time);
     bdate.year = my_time.tm_year + 1900;
     bdate.month = my_time.tm_mon + 1;
     bdate.day = my_time.tm_mday;

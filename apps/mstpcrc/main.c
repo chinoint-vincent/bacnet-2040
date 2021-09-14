@@ -155,6 +155,18 @@ static void Parse_Arguments(int argc, char *argv[])
 
 static void filename_create(char *filename)
 {
+#if 1	// fixing thread safety
+    time_t my_time;
+    struct tm today;
+
+    if (filename) {
+        my_time = time(NULL);
+        localtime_r(&my_time, &today);
+        sprintf(filename, "mstp_%04d%02d%02d%02d%02d%02d.cap",
+            1900 + today.tm_year, 1 + today.tm_mon, today.tm_mday,
+            today.tm_hour, today.tm_min, today.tm_sec);
+    }
+#else
     time_t my_time;
     struct tm *today;
 
@@ -165,6 +177,7 @@ static void filename_create(char *filename)
             1900 + today->tm_year, 1 + today->tm_mon, today->tm_mday,
             today->tm_hour, today->tm_min, today->tm_sec);
     }
+#endif
 }
 
 /* write packet to file in libpcap format */

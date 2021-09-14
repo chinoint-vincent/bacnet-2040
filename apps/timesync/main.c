@@ -158,7 +158,11 @@ int main(int argc, char *argv[])
     time_t current_seconds = 0;
     time_t timeout_seconds = 0;
     time_t rawtime;
+#if 1	// fixing thread safety
+    struct tm my_time;
+#else
     struct tm *my_time;
+#endif
     BACNET_DATE bdate;
     BACNET_TIME btime;
     long dnet = -1;
@@ -251,7 +255,17 @@ int main(int argc, char *argv[])
     timeout_seconds = apdu_timeout() / 1000;
     /* send the request */
     time(&rawtime);
-    my_time = localtime_r(&rawtime);
+#if 1 // fixing thread safety
+    localtime(&rawtime, &my_time);
+    bdate.year = my_time.tm_year + 1900;
+    bdate.month = my_time.tm_mon + 1;
+    bdate.day = my_time.tm_mday;
+    bdate.wday = my_time.tm_wday ? my_time.tm_wday : 7;
+    btime.hour = my_time.tm_hour;
+    btime.min = my_time.tm_min;
+    btime.sec = my_time.tm_sec;
+#else
+    my_time = localtime(&rawtime);
     bdate.year = my_time->tm_year + 1900;
     bdate.month = my_time->tm_mon + 1;
     bdate.day = my_time->tm_mday;
@@ -259,6 +273,7 @@ int main(int argc, char *argv[])
     btime.hour = my_time->tm_hour;
     btime.min = my_time->tm_min;
     btime.sec = my_time->tm_sec;
+#endif
     btime.hundredths = 0;
     Send_TimeSync_Remote(&dest, &bdate, &btime);
     /* loop forever - not necessary for time sync, but we can watch */

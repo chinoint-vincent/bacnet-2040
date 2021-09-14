@@ -33,11 +33,56 @@ bool datetime_local(BACNET_DATE *bdate,
     bool *dst_active)
 {
     bool status = false;
+#if 1 // fixing thread safety
+    struct tm *tcheck = NULL;
+    struct tm tblock;
+    struct timeval tv;
+    if (gettimeofday(&tv, NULL) == 0) {
+        //tblock = (struct tm *)localtime_r((const time_t *)&tv.tv_sec);
+        tcheck = localtime_r((const time_t *)&tv.tv_sec, &tblock);
+    }
+    if (tcheck) {
+        status = true;
+        /** struct tm
+         *   int    tm_sec   Seconds [0,60].
+         *   int    tm_min   Minutes [0,59].
+         *   int    tm_hour  Hour [0,23].
+         *   int    tm_mday  Day of month [1,31].
+         *   int    tm_mon   Month of year [0,11].
+         *   int    tm_year  Years since 1900.
+         *   int    tm_wday  Day of week [0,6] (Sunday =0).
+         *   int    tm_yday  Day of year [0,365].
+         *   int    tm_isdst Daylight Savings flag.
+         */
+        datetime_set_date(bdate, (uint16_t)tblock.tm_year + 1900,
+            (uint8_t)tblock.tm_mon + 1, (uint8_t)tblock.tm_mday);
+        datetime_set_time(btime, (uint8_t)tblock.tm_hour,
+            (uint8_t)tblock.tm_min, (uint8_t)tblock.tm_sec,
+            (uint8_t)(tv.tv_usec / 10000));
+        if (dst_active) {
+            /* The value of tm_isdst is:
+               - positive if Daylight Saving Time is in effect,
+               - 0 if Daylight Saving Time is not in effect, and
+               - negative if the information is not available. */
+            if (tblock.tm_isdst > 0) {
+                *dst_active = true;
+            } else {
+                *dst_active = false;
+            }
+        }
+        /* note: timezone is declared in <time.h> stdlib. */
+        if (utc_offset_minutes) {
+            /* timezone is set to the difference, in seconds,
+                between Coordinated Universal Time (UTC) and
+                local standard time */
+            *utc_offset_minutes = timezone / 60;
+        }
+    }
+#else
     struct tm *tblock = NULL;
     struct timeval tv;
-
     if (gettimeofday(&tv, NULL) == 0) {
-        tblock = (struct tm *)localtime_r((const time_t *)&tv.tv_sec);
+        tblock = (struct tm *)localtime((const time_t *)&tv.tv_sec);
     }
     if (tblock) {
         status = true;
@@ -76,7 +121,7 @@ bool datetime_local(BACNET_DATE *bdate,
             *utc_offset_minutes = timezone / 60;
         }
     }
-
+#endif
     return status;
 }
 

@@ -37,7 +37,7 @@ bool datetime_local(BACNET_DATE *bdate,
     struct timeval tv;
 
     if (gettimeofday(&tv, NULL) == 0) {
-        tblock = (struct tm *)localtime((const time_t *)&tv.tv_sec);
+        tblock = (struct tm *)localtime_r((const time_t *)&tv.tv_sec);
     }
     if (tblock) {
         status = true;

@@ -537,7 +537,7 @@ static void filename_create(char *filename)
 
     if (filename) {
         my_time = time(NULL);
-        today = localtime(&my_time);
+        today = localtime_r(&my_time);
         sprintf(filename, "mstp_%04d%02d%02d%02d%02d%02d.cap",
             1900 + today->tm_year, 1 + today->tm_mon, today->tm_mday,
             today->tm_hour, today->tm_min, today->tm_sec);

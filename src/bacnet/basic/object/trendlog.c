@@ -956,9 +956,30 @@ time_t TL_BAC_Time_To_Local(BACNET_DATE_TIME *SourceTime)
 
 void TL_Local_Time_To_BAC(BACNET_DATE_TIME *DestTime, time_t SourceTime)
 {
+    #if 1   // fixing thread safety
+    struct tm TempTime;
+
+    localtime_r(&SourceTime,&TempTime);
+
+    DestTime->date.year = (uint16_t)(TempTime.tm_year + 1900);
+    DestTime->date.month = (uint8_t)(TempTime.tm_mon + 1);
+    DestTime->date.day = (uint8_t)TempTime.tm_mday;
+    /* BACnet is 1 to 7 = Monday to Sunday
+     * Windows is days from Sunday 0 - 6 so we
+     * have to adjust */
+    if (TempTime.tm_wday == 0) {
+        DestTime->date.wday = 7;
+    } else {
+        DestTime->date.wday = (uint8_t)TempTime.tm_wday;
+    }
+    DestTime->time.hour = (uint8_t)TempTime.tm_hour;
+    DestTime->time.min = (uint8_t)TempTime.tm_min;
+    DestTime->time.sec = (uint8_t)TempTime.tm_sec;
+    DestTime->time.hundredths = 0;
+    #else
     struct tm *TempTime;
 
-    TempTime = localtime_r(&SourceTime);
+    TempTime = localtime(&SourceTime);
 
     DestTime->date.year = (uint16_t)(TempTime->tm_year + 1900);
     DestTime->date.month = (uint8_t)(TempTime->tm_mon + 1);
@@ -975,6 +996,7 @@ void TL_Local_Time_To_BAC(BACNET_DATE_TIME *DestTime, time_t SourceTime)
     DestTime->time.min = (uint8_t)TempTime->tm_min;
     DestTime->time.sec = (uint8_t)TempTime->tm_sec;
     DestTime->time.hundredths = 0;
+    #endif
 }
 
 /****************************************************************************
